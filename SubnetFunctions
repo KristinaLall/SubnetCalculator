@@ -1,0 +1,418 @@
+Option Strict On
+
+''' <summary>
+''' Final Assignment for PROG1101
+''' DLL file that has a fixed set of functions used for a subnet calculator.
+''' This dll set of calculations work independently from the user interface.
+''' Author: Kristina Lall
+''' Date: December 12, 2014
+''' </summary>
+''' <remarks></remarks>
+''' 
+Public Module SubnetFunctions
+
+    ''' <summary>
+    ''' This function calculates the next available subnet size for 
+    ''' the number of hosts (taken as a parameter). This function will return
+    ''' the subnet size as an integer.
+    ''' </summary>
+    Public Function CalculateSubnetSize(numberOfHostsPerSubnet As Integer) As Integer
+
+        'Declare variables
+        Dim calculatedSubnetSize As Integer = 1
+
+        'Loop through the current subnet size and multiply by 2 as long as it is still
+        'less than that of the next available subnet size. 
+        Do While calculatedSubnetSize < (numberOfHostsPerSubnet + 2)
+            calculatedSubnetSize = (calculatedSubnetSize * 2)
+        Loop
+
+        'Returns the subnet size
+        Return calculatedSubnetSize
+
+    End Function
+    ''' <summary>
+    ''' This functions takes in the ip address as a string parameter 
+    ''' and then returns it.
+    ''' </summary>
+    Public Function CalculateDecimalOctets(ipAddress As String) As String
+
+        'Returns the ip address parameter.
+        Return ipAddress
+
+    End Function
+    ''' <summary>
+    ''' This function calculates the Decimal address of the network address
+    ''' that is taken in as a parameter. The function then returns the 
+    ''' decimal address as a Long data type.
+    ''' </summary>
+    Public Function CalculateDecimalAddress(ipAddress As String) As Long
+
+        'Declare variables
+        'Splits the ipaddress string into an array seperated by "."
+        Dim ipArray() As String = ipAddress.Split("."c)
+        Dim DecimalAddress As Long
+
+        'Declare constants
+        'These constants represent the mask for each of the 
+        'octets in the ip address array.
+        Const firstOctet As Integer = 16777216
+        Const secondOctet As Integer = 65536
+        Const thirdOctet As Integer = 256
+
+        'Multiplies each array value with its corresponding octet and stores the value in DecimalAddress.
+        DecimalAddress = (Convert.ToInt64(ipArray(0)) * firstOctet) + (Convert.ToInt64(ipArray(1)) * secondOctet) + (Convert.ToInt64(ipArray(2)) * thirdOctet)
+
+        'Returns the Decimal address as a Long.
+        Return DecimalAddress
+
+    End Function
+    ''' <summary>
+    ''' This function calculates the address in binary for the ip address that is
+    ''' taken in as a parameter. The function returns the binary address as a string.
+    ''' </summary>
+    Public Function CalculateBinaryAddress(ipAddress As String) As String
+
+        'Declare variables and arrays
+        Dim ipArray() As String = ipAddress.Split("."c)
+        Dim ipBinary(ipArray.Length) As String 'stores the binary address in an array.
+        Dim ipInteger As Integer
+        Dim ipTotalBinary As String = ""
+
+        'Declare constants
+        Const TotalBitsInOctet As Integer = 8 'value for number of bits in an octet.
+
+        'This loop will go through each value of the array of octets
+        'and convert each set its binary equivalent.
+        For eachOctet As Integer = 0 To ipArray.Length - 1
+            ipInteger = Convert.ToInt32(ipArray(eachOctet)) 'convert each to integer.
+
+            'If the octet is 0, then the binary number is "00000000"
+            'Else, until the value of the octet is equal to 0, if the octet divides
+            'evenly by 2, then display a 0, else display a 1. Perform integer division
+            'to update the value for ipInteger.
+            If ipArray(eachOctet) = "0" Then
+                ipBinary(eachOctet) = "00000000"
+            Else
+                While ipInteger <> 0
+                    If (ipInteger Mod 2) = 0 Then
+                        ipBinary(eachOctet) += "0"
+                    Else
+                        ipBinary(eachOctet) += "1"
+                    End If
+                    ipInteger = ipInteger \ 2
+                End While
+
+            End If
+
+            'Need to reverse the octet as per the rules of binary conversion.
+            Dim reverseBinary As String = ""
+
+            'Loops through each octet bit and reverse the order to display the
+            'correct address in binary.
+            For index As Integer = ipBinary(eachOctet).Length - 1 To 0 Step -1
+                reverseBinary += ipBinary(eachOctet)(index)
+            Next
+
+            'Loop through each octet, if the octet does not have 8 bits, add the
+            '0s at the beginning (ex. 1 = 00000001 in binary)
+            While reverseBinary.Length < TotalBitsInOctet
+                reverseBinary = "0" + reverseBinary
+            End While
+
+            'set the result of the binary conversion to ipBinary
+            ipBinary(eachOctet) = reverseBinary
+
+        Next
+
+        'Concatenate each binary octet, seperated by "."
+        ipTotalBinary += ipBinary(0) + "." + ipBinary(1) + "." + ipBinary(2) + "." + ipBinary(3)
+
+        'Return the ipTotalBinary string.
+        Return ipTotalBinary
+
+    End Function
+    ''' <summary>
+    ''' This functions takes in an ipAddress as a string, calculates its value
+    ''' in Hex notation, and then returns the value in Hex as a string.
+    ''' </summary>
+    Public Function CalculateHexAddress(ipAddress As String) As String
+
+        'Declare variables and arrays.
+        Dim ipArray() As String = ipAddress.Split("."c)
+        Dim hexArray(ipArray.Length) As String 'An array to store each octet in Hex format
+        Dim totalHex As String 'To store the total Hex string
+
+        'Loop through each value in the array, convert the values in hex notation
+        'using the built-in vb Hex() function, and store the value in an array.
+        For index As Integer = 0 To ipArray.Length - 1
+
+            hexArray(index) = Hex(Convert.ToInt32(ipArray(index)))
+
+            'Fill in the leading 0's for the hex values in array.
+            Do While hexArray(index).Length < 2
+                hexArray(index) = "0" + hexArray(index)
+            Loop
+
+        Next
+
+        'Concatenate each value in the hexArray() following by a "."
+        totalHex = hexArray(0) + "." + hexArray(1) + "." + hexArray(2) + "." + hexArray(3)
+
+        'Return the totalHex value as a string.
+        Return totalHex
+
+    End Function
+    ''' <summary>
+    ''' This function calculates the network class based on the ip address parameter
+    ''' and returns the network class (either A, B, or C) as a string.
+    ''' </summary>
+    Public Function CalculateNetworkClass(ipAddress As String) As String
+
+        'Declare variables and arrays.
+        Dim networkClass As String
+        Dim ipArray() As String = ipAddress.Split("."c)
+
+        'Declare constants to store the class Ranges.
+        Const ClassARange As Integer = 128
+        Const ClassBRange As Integer = 191
+
+        'Check the first octet in the array for the range and then
+        'assign the networkClass variable the corresponding class letter.
+        If Convert.ToInt32(ipArray(0)) < ClassARange Then
+            networkClass = "A"
+        ElseIf Convert.ToInt32(ipArray(0)) < ClassBRange Then
+            networkClass = "B"
+        Else
+            networkClass = "C"
+        End If
+
+        'Returns the network class letter as a string.
+        Return networkClass
+
+    End Function
+    ''' <summary>
+    ''' This functions calculates the total number of ip addresses
+    ''' and returns it.
+    ''' </summary>
+    Public Function CalculateNumberOfIPAddresses(networkIPAddress As String) As Integer
+
+        'Declare Variables
+        Dim ipArray() As String = networkIPAddress.Split("."c)
+        Dim numberIP As Integer
+
+        'Declare Constants
+        'These constants correspond to the maximum number of ip address 
+        'that can be assigned for each class.
+        Const NumberIPClassA As Integer = 16777216
+        Const NumberIPClassB As Integer = 65536
+        Const NumberIPClassC As Integer = 256
+
+        'Call the function that returns the network class and 
+        'assign the appropriate number of ip addresses.
+        If CalculateNetworkClass(networkIPAddress) = "A" Then
+            numberIP = NumberIPClassA
+        ElseIf CalculateNetworkClass(networkIPAddress) = "B" Then
+            numberIP = NumberIPClassB
+        Else
+            numberIP = NumberIPClassC
+        End If
+
+        'Returns the number of ip addresses as an integer.
+        Return numberIP
+
+    End Function
+    ''' <summary>
+    ''' This function takes in the number of hosts as a string parameter and returns
+    ''' the subnet mask of the network address as a string. This function will also calculate
+    ''' the CIDR notation of the subnet mask.
+    ''' </summary>
+    Public Function CalculateSubnetMask(numberOfHostsPerSubnet As Integer) As String
+
+        'Declare Constants
+        Const MaxCIDR As Integer = 32
+        Const DefaultSubnetMaskC As Integer = 256
+        Const DefaultSubnetMaskB As Integer = DefaultSubnetMaskC * DefaultSubnetMaskC
+        Const DefaultSubnetMaskA As Integer = DefaultSubnetMaskB * DefaultSubnetMaskC
+        Const OctetbitRange As Integer = 128
+
+        'Declare arrays.
+        Dim subnetSize As Integer = CalculateSubnetSize(numberOfHostsPerSubnet)
+        Dim subnetMask As String = "0"
+        Dim CIDRSubnetMask As Integer = MaxCIDR
+        Dim totalSubnetMask As String
+        Dim lastOctet As Integer = subnetSize
+        Dim bitsCount As Integer = lastOctet
+        Dim counter As Integer = 1
+
+        'Check if the subnet will be equal to its default subnet mask. if it is,
+        'then the subnet mask will be the default subnet mask.
+        If subnetSize = DefaultSubnetMaskC Then
+            subnetMask = "255.255.255.0"
+
+        ElseIf subnetSize = DefaultSubnetMaskB Then
+            subnetMask = "255.255.0.0"
+
+        ElseIf subnetSize = DefaultSubnetMaskA Then
+            subnetMask = "255.0.0.0"
+
+            'if the subnet mask is not the default, then, depending
+            'on the range of the subnet size, will keep adding the bits from
+            'the size of the subnet to the maximum (128) for each octet.
+        ElseIf subnetSize >= 1 And subnetSize <= OctetbitRange Then
+
+            'Adds each number greater than the subnet size until 
+            'the octet range is complete as per subnet mask calculations.
+            Do While bitsCount < OctetbitRange
+                bitsCount = bitsCount * 2
+                lastOctet = lastOctet + bitsCount
+            Loop
+
+            'update the subnet mask
+            subnetMask = "255.255.255." + lastOctet.ToString
+
+        ElseIf subnetSize < DefaultSubnetMaskB Then
+
+            lastOctet = subnetSize \ DefaultSubnetMaskC
+            bitsCount = lastOctet
+
+            'Adds each number greater than the subnet size until 
+            'the octet range is complete as per subnet mask calculations.
+            Do While bitsCount < OctetbitRange
+                bitsCount = bitsCount * 2
+                lastOctet = lastOctet + bitsCount
+            Loop
+
+            'update the subnet mask
+            subnetMask = "255.255." + lastOctet.ToString + ".0"
+        Else
+
+            lastOctet = subnetSize \ (DefaultSubnetMaskB)
+            bitsCount = lastOctet
+
+            'Adds each number greater than the subnet size until 
+            'the octet range is complete as per subnet mask calculations.
+            Do While bitsCount < OctetbitRange
+                bitsCount = bitsCount * 2
+                lastOctet = lastOctet + bitsCount
+            Loop
+
+            'update the subnet mask
+            subnetMask = "255." + lastOctet.ToString + ".0.0"
+        End If
+
+        'Calculating the CIDR notation for the ip address by 
+        'looping through each bit starting with a /32 up until the
+        'value for the subnet size. Decrease the counter each time until
+        'the value for CIDR is correct.
+        While counter < subnetSize
+            counter = counter * 2
+            CIDRSubnetMask -= 1
+        End While
+
+        'Combine both strings for the subnet mask and the CIDR notation.
+        totalSubnetMask = (subnetMask + " or /" + CIDRSubnetMask.ToString)
+
+        'Return the total subnet mask (which includes CIDR notation).
+        Return totalSubnetMask
+
+    End Function
+    ''' <summary>
+    ''' This function calculates the value of the subnet mask in binary. This function takes
+    ''' in the number of hosts per subnet as an integer parameter and returns the binary value
+    ''' of the subnet mask as a string.
+    ''' </summary>
+    Public Function CalculateBinaryMask(numberOfHostsPerSubnet As Integer) As String
+
+        'Declare variables and arrays
+        'Call the function that calculates the subnet size and store in variable.
+        Dim subnetSize As Integer = CalculateSubnetSize(numberOfHostsPerSubnet)
+        Dim subnetMask As String = CalculateSubnetMask(numberOfHostsPerSubnet)
+        'Array that stores the subnet mask string by separating it by spaces.
+        Dim subnets() As String = subnetMask.Split(" "c)
+        Dim binaryMask As String
+
+        'Calls the function that will take in the subnet mask address (1st value in subnets() array
+        'and returns the binary string value.
+        binaryMask = CalculateBinaryAddress(subnets(0))
+
+        'Returns the calculated binary subnet mask as a string.
+        Return binaryMask
+
+    End Function
+    ''' <summary>
+    ''' This function calculates the number of subnets by taking in the ipaddress as a string,
+    ''' as the number of hosts as an integer. This funciton will calculate the total number of 
+    ''' subnets created and return it as an integer.
+    ''' </summary>
+    Public Function CalculateNumberOfSubnets(ipAddress As String, numberOfHostsPerSubnet As Integer) As Integer
+
+        'Declare variables
+        Dim numberOfSubnets As Double
+
+        'Calculates the number of subnets (subnets = #ip addresses/calculated subnet size)
+        numberOfSubnets = Convert.ToDouble(CalculateNumberOfIPAddresses(ipAddress)) / Convert.ToDouble((CalculateSubnetSize(numberOfHostsPerSubnet)))
+
+        'Returns the number of subnets created as an integer.
+        Return Convert.ToInt32(numberOfSubnets)
+
+    End Function
+    ''' <summary>
+    ''' This function calculates the list of ip address ranges as per the user input. This function
+    ''' takes in the ip address as a string and the number of hosts per subnet as an integer and returns
+    ''' the list of ip addresses as an array.
+    ''' </summary>
+    Public Function CalculateSubnetList(ipAddress As String, numberOfHostsPerSubnet As Integer) As String()
+
+        'Declare variables and arrays
+        Dim sizeofArray As Integer = CalculateNumberOfSubnets(ipAddress, numberOfHostsPerSubnet)
+        Dim network(sizeofArray - 1) As String
+
+        'Calls the function to calculate the subnet size and stores it in subnetSize.
+        Dim subnetSize As Integer = CalculateSubnetSize(numberOfHostsPerSubnet)
+
+        'Calls the function to calculate the decimaladdress of the ip address and stores
+        'it in initialIPAddress as a Long.
+        Dim initialIPaddress As Long = CalculateDecimalAddress(ipAddress)
+
+        Dim networkIP As Long 'network ip addresses
+        Dim broadcastIP As Long 'broadcast ip addresses.
+        Dim octets(3) As Long 'this array stores the IPv4 format for the decimal addresses.
+
+        'Declare constants
+        Const FullOctet As Integer = 256 'represents the value for a fullOctet
+
+        'Loops through each subnet and displays the network and broadcast address
+        'for each network by adding the size of the subnet to each network (in Decimal).
+        For index As Integer = 0 To sizeofArray - 1
+            networkIP = initialIPaddress + (index * subnetSize)
+            broadcastIP = networkIP + (subnetSize - 1)
+
+            'Loop through each octet backwards and divide by a full octet in
+            'order to get the IPv4 format for the network ip address.
+            For octetIndex As Integer = 3 To 0 Step -1
+                octets(octetIndex) = networkIP Mod FullOctet
+                networkIP = networkIP \ FullOctet
+            Next
+
+            'Joins each value in the octets array with a "."
+            network(index) = String.Join("."c, octets)
+
+            'Same procedure is done for the broadcast ipaddress
+            For octetIndex As Integer = 3 To 0 Step -1
+                octets(octetIndex) = broadcastIP Mod FullOctet
+                broadcastIP = broadcastIP \ FullOctet
+            Next
+
+            'joins the network and broadcast ip addresses together for each IP range
+            'in the network
+            network(index) += " - " + String.Join("."c, octets)
+
+        Next
+
+        'Returns the array of the list of ip ranges as string.
+        Return network
+
+    End Function
+
+End Module
